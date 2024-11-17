@@ -1,5 +1,7 @@
 const nodesList = document.getElementById('nodesList');
 const addNodeForm = document.getElementById('addNodeForm');
+const edgesList = document.getElementById('edgesList');
+const addEdgeForm = document.getElementById('addEdgeForm');
 
 async function fetchNodes() {
     try {
@@ -42,4 +44,52 @@ addNodeForm.addEventListener('submit', async (e) => {
     }
 });
 
+async function fetchEdges() {
+    try {
+        const response = await fetch('/api/edges');
+        const edges = await response.json();
+        edgesList.innerHTML = ''; 
+        edges.forEach(edge => {
+            const li = document.createElement('li');
+            li.textContent = `From Node ${edge.node_from} to Node ${edge.node_to} (${edge.connection_type}, Risk: ${edge.risk_level})`;
+            edgesList.appendChild(li);
+        });
+    } catch (err) {
+        console.error('Error fetching edges:', err);
+    }
+}
+
+addEdgeForm.addEventListener('submit', async (e) => {
+    e.preventDefault(); 
+    const nodeFrom = document.getElementById('nodeFrom').value;
+    const nodeTo = document.getElementById('nodeTo').value;
+    const connectionType = document.getElementById('connectionType').value;
+    const riskLevel = document.getElementById('riskLevel').value;
+
+    try {
+        const response = await fetch('/api/edges', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                node_from: nodeFrom,
+                node_to: nodeTo,
+                connection_type: connectionType,
+                risk_level: riskLevel,
+            }),
+        });
+
+        if (response.ok) {
+            document.getElementById('addEdgeForm').reset(); 
+            fetchEdges(); 
+        } else {
+            console.error('Failed to add edge');
+        }
+    } catch (err) {
+        console.error('Error adding edge:', err);
+    }
+});
+
 fetchNodes();
+fetchEdges();
