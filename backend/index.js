@@ -1,8 +1,17 @@
 const express = require('express');
-const app = express();
-const port = 3000;
-const pool = require('./db');
 const path = require('path');
+const pool = require('./db'); 
+const nodeRoutes = require('./routes/nodes'); 
+const edgeRoutes = require('./routes/edges');
+
+const app = express();
+const port = 3000; 
+
+app.use(express.json());
+
+// api
+app.use('/api/nodes', nodeRoutes);
+app.use('/api/edges', edgeRoutes);
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -11,12 +20,13 @@ app.get('/', (req, res) => {
 });
 
 app.get('/nodes', async (req, res) => {
-    const result = await pool.query('SELECT * FROM nodes');
-    res.json(result.rows);
-});
-
-app.get('/', (req, res) => {
-    res.send('SeekerSQL Backend is Running');
+    try {
+        const result = await pool.query('SELECT * FROM nodes');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 app.listen(port, () => {
