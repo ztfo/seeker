@@ -41,12 +41,8 @@ app.get('/api/simulate', async (req, res) => {
                 FROM bfs b
                 JOIN edges e ON b.node = e.node_from
                 WHERE NOT (e.node_to = ANY(path))
-            ),
-            WITH ranked_paths AS (
-                SELECT *, RANK() OVER (ORDER BY total_weight DESC) AS rank
-                FROM bfs
             )
-            SELECT * FROM ranked_paths WHERE rank <= 3; -- Return top 3 high-risk paths
+            SELECT node, level, path, total_weight FROM bfs;
         `, [startNode]);
 
         res.json(result.rows);
