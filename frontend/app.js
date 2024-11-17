@@ -9,10 +9,10 @@ async function fetchNodes() {
     try {
         const response = await fetch('/api/nodes');
         const nodes = await response.json();
-        nodesList.innerHTML = ''; 
+        nodesList.innerHTML = '';
         nodes.forEach(node => {
             const li = document.createElement('li');
-            li.textContent = `${node.name} (${node.type})`;
+            li.textContent = `ID: ${node.id} | Name: ${node.name} | Type: ${node.type}`;
             nodesList.appendChild(li);
         });
     } catch (err) {
@@ -169,7 +169,10 @@ async function updateGraph() {
         const edges = await edgesResponse.json();
 
         const cyNodes = nodes.map(node => ({
-            data: { id: `node${node.id}`, label: node.name },
+            data: {
+                id: `node${node.id}`, 
+                label: `${node.name} (ID: ${node.id})`
+            },
         }));
 
         const cyEdges = edges.map(edge => ({
