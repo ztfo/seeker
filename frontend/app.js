@@ -91,5 +91,80 @@ addEdgeForm.addEventListener('submit', async (e) => {
     }
 });
 
+// start cytoscape
+let cy;
+
+function initializeGraph() {
+    cy = cytoscape({
+        container: document.getElementById('cy'),
+
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    'background-color': '#0074D9',
+                    'label': 'data(label)',
+                    'color': '#fff',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'font-size': '10px',
+                },
+            },
+            {
+                selector: 'edge',
+                style: {
+                    'width': 2,
+                    'line-color': '#FF851B',
+                    'target-arrow-color': '#FF851B',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier',
+                },
+            },
+        ],
+
+        layout: {
+            name: 'breadthfirst',
+            directed: true,
+        },
+    });
+}
+
+async function updateGraph() {
+    try {
+        const [nodesResponse, edgesResponse] = await Promise.all([
+            fetch('/api/nodes'),
+            fetch('/api/edges'),
+        ]);
+
+        const nodes = await nodesResponse.json();
+        const edges = await edgesResponse.json();
+
+        const cyNodes = nodes.map(node => ({
+            data: { id: `node${node.id}`, label: node.name },
+        }));
+
+        const cyEdges = edges.map(edge => ({
+            data: {
+                id: `edge${edge.id}`,
+                source: `node${edge.node_from}`,
+                target: `node${edge.node_to}`,
+                label: edge.connection_type,
+            },
+        }));
+
+        cy.elements().remove();
+        cy.add([...cyNodes, ...cyEdges]);
+        cy.layout({ name: 'breadthfirst' }).run(); 
+    } catch (err) {
+        console.error('Error updating graph:', err);
+    }
+}
+
+initializeGraph();
+updateGraph();
+
+addNodeForm.addEventListener('submit', updateGraph);
+addEdgeForm.addEventListener('submit', updateGraph);
+
 fetchNodes();
 fetchEdges();
