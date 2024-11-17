@@ -93,7 +93,29 @@ addEdgeForm.addEventListener('submit', async (e) => {
     }
 });
 
-// sim hit
+async function populateDropdowns() {
+    try {
+        const response = await fetch('/api/nodes');
+        const nodes = await response.json();
+
+        const dropdownIds = ['nodeFrom', 'nodeTo', 'startNode'];
+
+        dropdownIds.forEach(dropdownId => {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.innerHTML = '';
+
+            nodes.forEach(node => {
+                const option = document.createElement('option');
+                option.value = node.id;
+                option.textContent = `ID: ${node.id} | ${node.name}`;
+                dropdown.appendChild(option);
+            });
+        });
+    } catch (err) {
+        console.error('Error populating dropdowns:', err);
+    }
+}
+
 simulateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const startNode = document.getElementById('startNode').value;
@@ -111,9 +133,9 @@ simulateForm.addEventListener('submit', async (e) => {
             return;
         }
 
-        paths.forEach(({ node, level, path }) => {
+        paths.forEach(({ node, level, path, total_weight, rank }) => {
             const li = document.createElement('li');
-            li.textContent = `Node: ${node}, Level: ${level}, Path: ${path.join(' -> ')}`;
+            li.textContent = `Rank: ${rank}, Node: ${node}, Level: ${level}, Path: ${path.join(' -> ')}, Total Weight: ${total_weight}`;
             pathsList.appendChild(li);
         });
     } catch (err) {
@@ -140,6 +162,12 @@ function initializeGraph() {
                 },
             },
             {
+                selector: 'node.highlighted',
+                style: {
+                    'background-color': '#FF4136',
+                },
+            },
+            {
                 selector: 'edge',
                 style: {
                     'width': 2,
@@ -147,6 +175,29 @@ function initializeGraph() {
                     'target-arrow-color': '#FF851B',
                     'target-arrow-shape': 'triangle',
                     'curve-style': 'bezier',
+                },
+            },
+            {
+                selector: 'edge.highlighted',
+                style: {
+                    'line-color': '#FF4136',
+                    'target-arrow-color': '#FF4136',
+                    'width': 4,
+                },
+            },
+            {
+                selector: 'edge',
+                style: {
+                    'width': 2,
+                    'line-color': '#FF851B',
+                    'target-arrow-color': '#FF851B',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier',
+                    'label': 'data(label)',
+                    'font-size': '10px',
+                    'text-background-color': '#ffffff',
+                    'text-background-opacity': 1,
+                    'text-background-padding': '2px',
                 },
             },
         ],
@@ -177,10 +228,10 @@ async function updateGraph() {
 
         const cyEdges = edges.map(edge => ({
             data: {
-                id: `edge${edge.id}`,
+                id: `edge${edge.node_from}-${edge.node_to}`,
                 source: `node${edge.node_from}`,
                 target: `node${edge.node_to}`,
-                label: edge.connection_type,
+                label: `Risk: ${edge.risk_level}`,
             },
         }));
 
@@ -192,6 +243,7 @@ async function updateGraph() {
     }
 }
 
+populateDropdowns();
 initializeGraph();
 updateGraph();
 

@@ -21,13 +21,13 @@ app.get('/api/simulate', async (req, res) => {
     }
 
     try {
-        // wink ;)
         const result = await pool.query(`
             WITH RECURSIVE bfs AS (
                 SELECT
                     node_to AS node,
                     1 AS level,
-                    ARRAY[node_from] AS path
+                    ARRAY[node_from] AS path,
+                    risk_level AS total_weight
                 FROM edges
                 WHERE node_from = $1
 
@@ -36,12 +36,17 @@ app.get('/api/simulate', async (req, res) => {
                 SELECT
                     e.node_to,
                     b.level + 1,
-                    path || e.node_to
+                    path || e.node_to,
+                    b.total_weight + e.risk_level
                 FROM bfs b
                 JOIN edges e ON b.node = e.node_from
                 WHERE NOT (e.node_to = ANY(path))
+            ),
+            WITH ranked_paths AS (
+                SELECT *, RANK() OVER (ORDER BY total_weight DESC) AS rank
+                FROM bfs
             )
-            SELECT node, level, path FROM bfs;
+            SELECT * FROM ranked_paths WHERE rank <= 3; -- Return top 3 high-risk paths
         `, [startNode]);
 
         res.json(result.rows);
