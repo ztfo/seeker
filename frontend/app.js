@@ -2,6 +2,8 @@ const nodesList = document.getElementById('nodesList');
 const addNodeForm = document.getElementById('addNodeForm');
 const edgesList = document.getElementById('edgesList');
 const addEdgeForm = document.getElementById('addEdgeForm');
+const simulateForm = document.getElementById('simulateForm');
+const pathsList = document.getElementById('pathsList');
 
 async function fetchNodes() {
     try {
@@ -91,7 +93,34 @@ addEdgeForm.addEventListener('submit', async (e) => {
     }
 });
 
-// start cytoscape
+// sim hit
+simulateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const startNode = document.getElementById('startNode').value;
+
+    try {
+        const response = await fetch(`/api/simulate?startNode=${startNode}`);
+        const paths = await response.json();
+
+        pathsList.innerHTML = '';
+
+        if (paths.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No paths found.';
+            pathsList.appendChild(li);
+            return;
+        }
+
+        paths.forEach(({ node, level, path }) => {
+            const li = document.createElement('li');
+            li.textContent = `Node: ${node}, Level: ${level}, Path: ${path.join(' -> ')}`;
+            pathsList.appendChild(li);
+        });
+    } catch (err) {
+        console.error('Error simulating paths:', err);
+    }
+});
+
 let cy;
 
 function initializeGraph() {
